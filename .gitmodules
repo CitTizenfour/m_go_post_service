@@ -1,0 +1,4 @@
+[submodule "vendoo_protos"]
+	path = vendoo_protos
+	url = git@gitlab.udevs.io:vendoo/vendoo_protos.git
+	branch = master

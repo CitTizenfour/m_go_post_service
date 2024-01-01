@@ -8,12 +8,15 @@ import (
 	"strconv"
 	"syscall"
 
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/matrix/microservice/go_post_service/config"
+	cpb "github.com/matrix/microservice/go_post_service/genproto/post_service"
 	"github.com/matrix/microservice/go_post_service/pkg/logger"
 	"github.com/matrix/microservice/go_post_service/service"
 	"github.com/matrix/microservice/go_post_service/storage"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func main() {
@@ -26,7 +29,7 @@ func main() {
 	}
 
 	conStr := fmt.Sprintf("host=%s port=%v user=%s password=%s dbname=%s sslmode=%s", cfg.PostgresHost,
-		cfg.PostgresPort, cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresDB, "disable")
+		cfg.PostgresPort, cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresDatabase, "disable")
 
 	db, err := sqlx.Connect("pgx", conStr)
 	if err != nil {
@@ -45,9 +48,11 @@ func main() {
 
 	s := grpc.NewServer()
 	// postService generation GRPC
+	reflection.Register(s)
+	cpb.RegisterPostServiceServer(s, postService)
 
 	go func() {
-		log.Info(`Post Service running...`)
+		log.Info(`Post Service running...`, logger.Any(cfg.ServiceHost, strconv.Itoa(cfg.ServicePort)))
 		if err := s.Serve(lis); err != nil {
 			log.Fatal("Error while listening: %v", logger.Error(err))
 		}

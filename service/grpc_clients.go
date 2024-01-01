@@ -6,4 +6,6 @@ type ServiceManager interface{}
 
 type grpClients struct{}
 
-func NewGrpClients(cfg config.Config) (ServiceManager, error)
+func NewGrpClients(cfg config.Config) (ServiceManager, error) {
+	return grpClients{}, nil
+}

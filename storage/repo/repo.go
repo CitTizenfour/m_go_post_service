@@ -1,7 +1,9 @@
 package repo
 
+import cpb "github.com/matrix/microservice/go_post_service/genproto/post_service"
+
 type (
 	PostI[T any] interface {
-		Delete(id string) error
+		CreatePost(req *cpb.CreatePostReq) (response *cpb.PostResponse, err error)
 	}
 )

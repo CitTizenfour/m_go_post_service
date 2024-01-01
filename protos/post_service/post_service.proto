@@ -1,0 +1,11 @@
+syntax = "proto3";
+package genproto;
+import "google/protobuf/empty.proto";
+
+import "post.proto";
+
+option go_package = "genproto/post_service";
+
+service PostService {
+    rpc CreatePost(CreatePostReq) returns(PostResponse) {}
+}

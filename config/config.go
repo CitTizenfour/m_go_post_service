@@ -18,7 +18,7 @@ type Config struct {
 
 	PostgresHost     string
 	PostgresPort     int
-	PostgresDB       string
+	PostgresDatabase       string
 	PostgresUser     string
 	PostgresPassword string
 
@@ -70,7 +70,7 @@ func Load() Config {
 	config.HttpPort = cast.ToString(getOrReturnDefault("HTTP_PORT", ":8080"))
 
 	config.ServiceHost = cast.ToString(getOrReturnDefault("SERVICE_HOST", "localhost"))
-	config.ServicePort = cast.ToInt(getOrReturnDefault("SERVICE_PORT", 5002))
+	config.ServicePort = cast.ToInt(getOrReturnDefault("SERVICE_PORT", 8008))
 
 	config.CorporateServiceHost = cast.ToString(getOrReturnDefault("CORPORATE_SERVICE_HOST", "localhost"))
 	config.CorporateServicePort = cast.ToInt(getOrReturnDefault("CORPORATE_SERVICE_PORT", 5003))
@@ -83,9 +83,9 @@ func Load() Config {
 
 	config.PostgresHost = cast.ToString(getOrReturnDefault("POSTGRES_HOST", "localhost"))
 	config.PostgresPort = cast.ToInt(getOrReturnDefault("POSTGRES_PORT", 5432))
-	config.PostgresDB = cast.ToString(getOrReturnDefault("POSTGRES_DB", "loan_service"))
-	config.PostgresUser = cast.ToString(getOrReturnDefault("POSTGRES_USER", "postgres"))
-	config.PostgresPassword = cast.ToString(getOrReturnDefault("POSTGRES_PASSWORD", "postgres"))
+	config.PostgresDatabase = cast.ToString(getOrReturnDefault("POSTGRES_DATABASE", "m_go_service"))
+	config.PostgresUser = cast.ToString(getOrReturnDefault("POSTGRES_USER", "citizenfour"))
+	config.PostgresPassword = cast.ToString(getOrReturnDefault("POSTGRES_PASSWORD", "12321"))
 
 	config.CDN = cast.ToString(getOrReturnDefault("CDN", "https://test.cdn.iman.uz"))
 	config.MinioBucket = cast.ToString(getOrReturnDefault("MINIO_BUCKET", "documents"))

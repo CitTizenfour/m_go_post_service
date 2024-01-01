@@ -1,0 +1,78 @@
+before_script:
+  - docker login $CI_REGISTRY --username $CI_REGISTRY_USER --password $CI_REGISTRY_PASSWORD
+  - apk update && apk --no-cache --update add build-base curl 
+
+stages:
+  - build
+  - migrate
+  - deploy
+
+build-image-prod:
+  image: gitlab.udevs.io:5050/docker/docker:dind
+  stage: build
+  script:
+    - make build-image TAG=$CI_PIPELINE_IID REGISTRY=$CI_REGISTRY PROJECT_NAME=$CI_PROJECT_NAMESPACE
+    - make push-image TAG=$CI_PIPELINE_IID REGISTRY=$CI_REGISTRY PROJECT_NAME=$CI_PROJECT_NAMESPACE
+  only:
+    - master
+
+build-image-test:
+  image: gitlab.udevs.io:5050/docker/docker:dind
+  stage: build
+  script:
+    - make build-image TAG=$CI_PIPELINE_IID REGISTRY=$CI_REGISTRY PROJECT_NAME=$CI_PROJECT_NAMESPACE ENV_TAG=test
+    - make push-image TAG=$CI_PIPELINE_IID REGISTRY=$CI_REGISTRY PROJECT_NAME=$CI_PROJECT_NAMESPACE ENV_TAG=test
+  only:
+    - staging
+
+migrate-prod:
+  stage: migrate
+  before_script:
+    - apk add wget && wget https://github.com/golang-migrate/migrate/releases/download/v4.14.1/migrate.linux-amd64.tar.gz
+    - tar -xvf migrate.linux-amd64.tar.gz && mv migrate.linux-amd64 migrate && chmod +x migrate
+  script:
+    - ./migrate -path=$PWD/migrations -database="${VENDOO_GO_LOAN_SERVICE_PRODDB}?sslmode=disable&x-migrations-table=migrations_$CI_PROJECT_NAME" up
+  only:
+    - master
+
+migrate-test:
+  stage: migrate
+  before_script:
+    - apk add wget && wget https://github.com/golang-migrate/migrate/releases/download/v4.14.1/migrate.linux-amd64.tar.gz
+    - tar -xvf migrate.linux-amd64.tar.gz && mv migrate.linux-amd64 migrate && chmod +x migrate
+  script:
+    - ./migrate -path=$PWD/migrations -database="${VENDOO_GO_LOAN_SERVICE_TESTDB}?sslmode=disable&x-migrations-table=migrations_$CI_PROJECT_NAME" up
+  only:
+    - staging
+
+deploy-prod:
+  image: gitlab.udevs.io:5050/docker/docker:dind
+  stage: deploy
+  before_script:
+    - apk update && apk add --update --no-cache sshpass build-base
+    - eval $(ssh-agent -s)
+    - echo "$VENDOO_PROD_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+  script:
+    - sshpass -p $VENDOO_PASSWORD ssh -p $VENDOO_PROD_SSH_PORT -o StrictHostKeyChecking=no $VENDOO_PROD_USER@$VENDOO_PROD_HOST 'docker service update --with-registry-auth --image '$CI_REGISTRY'/'$CI_PROJECT_NAMESPACE'/'$CI_PROJECT_NAME':'$CI_PIPELINE_IID' '$CI_PROJECT_NAME''
+
+    - sshpass -p $VENDOO_PASSWORD ssh -p $VENDOO_PROD_SSH_PORT -o StrictHostKeyChecking=no $VENDOO_PROD_USER@$VENDOO_PROD_HOST_DC2 'docker service update --with-registry-auth --image '$CI_REGISTRY'/'$CI_PROJECT_NAMESPACE'/'$CI_PROJECT_NAME':'$CI_PIPELINE_IID' '$CI_PROJECT_NAME''
+
+
+  only:
+    - master
+
+deploy-test:
+  image: gitlab.udevs.io:5050/docker/docker:dind
+  stage: deploy
+  before_script:
+    - apk update && apk add --update --no-cache sshpass build-base
+    - eval $(ssh-agent -s)
+    - echo "$VENDOO_TEST_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+  script:
+    - sshpass -p $VENDOO_PASSWORD ssh -p $VENDOO_TEST_SSH_PORT -o StrictHostKeyChecking=no $VENDOO_TEST_USER@$VENDOO_TEST_HOST 'docker service update --with-registry-auth --image '$CI_REGISTRY'/'$CI_PROJECT_NAMESPACE'/'$CI_PROJECT_NAME':'$CI_PIPELINE_IID' '$CI_PROJECT_NAME''
+  only:
+    - staging
