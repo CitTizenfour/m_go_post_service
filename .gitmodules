@@ -1,4 +1,4 @@
-[submodule "vendoo_protos"]
-	path = vendoo_protos
-	url = git@gitlab.udevs.io:vendoo/vendoo_protos.git
+[submodule "m_protos"]
+	path = m_protos
+	url = git@github.com:CitTizenfour/m_protos.git
 	branch = master
